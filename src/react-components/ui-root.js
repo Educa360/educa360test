@@ -1654,7 +1654,11 @@ class UIRoot extends Component {
                     {entered && (
                       <TakeScreenCapture
                         onClick={() => {
-                          console.log("first");
+                          const canvasData = document.querySelector(".a-canvas");
+                          const link = document.createElement("a");
+                          link.download = "screenshot.png";
+                          link.href = canvasData.toDataURL("image/png");
+                          this.props.scene.emit("add_media", canvasData.toDataURL("image/png"));
                         }}
                       />
                     )}

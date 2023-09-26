@@ -180,7 +180,8 @@ export class App {
       depth: !enablePostEffects,
       stencil: false,
       powerPreference: "high-performance",
-      canvas
+      canvas,
+      preserveDrawingBuffer: true,
     });
 
     // We manually handle resetting this in mainTick so that stats are correctly reported with post effects enabled
