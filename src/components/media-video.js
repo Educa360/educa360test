@@ -28,7 +28,9 @@ const ONCE_TRUE = { once: true };
 const TYPE_IMG_PNG = { type: "image/png" };
 
 const isIOS = detectIOS();
-const audioIconTexture = new HubsTextureLoader().load(audioIcon);
+const audioIconTexture = new HubsTextureLoader().load(
+  "https://images.pexels.com/photos/352505/pexels-photo-352505.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+);
 
 export const VOLUME_LABELS = [];
 for (let i = 0; i <= 20; i++) {
@@ -316,9 +318,14 @@ AFRAME.registerComponent("media-video", {
       this.video.currentTime = currentTime;
     }
 
-    if (this.hoverMenu) {
+    if(!this.audio){
+      if (this.hoverMenu) {
+        this.playPauseButton.setAttribute("icon-button", "active", pause);
+      }
+    } else {
       this.playPauseButton.setAttribute("icon-button", "active", pause);
     }
+    
 
     if (pause) {
       this.video.pause();
@@ -481,9 +488,10 @@ AFRAME.registerComponent("media-video", {
       this.mesh.layers.set(Layers.CAMERA_LAYER_FX_MASK);
       this.el.setObject3D("mesh", this.mesh);
     }
-
     if (!texture.isVideoTexture) {
-      this.mesh.material.map = audioIconTexture;
+      const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0000001 });
+      this.mesh.material = material;
+      //   this.mesh.material.map = audioIconTexture;
     } else {
       this.mesh.material.map = texture;
       if (projection === "flat") {
@@ -668,7 +676,11 @@ AFRAME.registerComponent("media-video", {
     const pinnableElement = mediaLoader.linkedEl || this.el;
     const isPinned = pinnableElement.components.pinnable && pinnableElement.components.pinnable.data.pinned;
     this.playbackControls.object3D.visible = !this.data.hidePlaybackControls && !!this.video;
-    this.timeLabel.object3D.visible = !this.data.hidePlaybackControls;
+    if(!this.audio){
+      this.timeLabel.object3D.visible = !this.data.hidePlaybackControls;
+    } else {
+      this.timeLabel.object3D.visible = false;
+    }
     this.volumeLabel.object3D.visible =
       this.volumeUpButton.object3D.visible =
       this.volumeDownButton.object3D.visible =
@@ -681,13 +693,20 @@ AFRAME.registerComponent("media-video", {
     const mayModifyPlayHead =
       !!this.video && !this.videoIsLive && (!isPinned || window.APP.hubChannel.can("pin_objects"));
 
-    this.playPauseButton.object3D.visible =
+    if(!this.audio){
+      this.playPauseButton.object3D.visible =
       this.seekForwardButton.object3D.visible =
       this.seekBackButton.object3D.visible =
         mayModifyPlayHead;
-
-    this.linkButton.object3D.visible = !!mediaLoader.mediaOptions.href;
-
+    } else{
+      this.playPauseButton.object3D.visible = mayModifyPlayHead;
+      this.seekForwardButton.object3D.visible = this.seekBackButton.object3D.visible = false;
+      this.volumeDownButton.object3D.visible = false;
+      this.volumeUpButton.object3D.visible = false;
+      this.timeLabel.object3D.visible = true;
+      this.volumeLabel.object3D.visible = false;
+      this.linkButton.object3D.visible = !!mediaLoader.mediaOptions.href;
+    }
     if (this.videoIsLive) {
       this.timeLabel.setAttribute("text", "value", "LIVE");
     }
@@ -703,7 +722,13 @@ AFRAME.registerComponent("media-video", {
   },
 
   tick: (() => {
+    
     return function () {
+      if (this.audio && this.hoverMenu) {
+        this.hoverMenu.object3D.visible = true;
+        this.playPauseButton.object3D.visible = true;
+        this.timeLabel.object3D.visible = false;
+      }
       if (!this.video) return;
 
       const userinput = this.el.sceneEl.systems.userinput;
@@ -725,7 +750,7 @@ AFRAME.registerComponent("media-video", {
 
       this.wasHeld = isHeld;
 
-      if (this.hoverMenu && this.hoverMenu.object3D.visible && !this.videoIsLive) {
+      if (this.hoverMenu && this.hoverMenu.object3D.visible && !this.videoIsLive && !this.audio) {
         this.timeLabel.setAttribute(
           "text",
           "value",
@@ -789,8 +814,8 @@ AFRAME.registerComponent("media-video", {
       APP.dialog.off("stream_updated", this._onStreamUpdated);
     }
 
+    this.playPauseButton.object3D.removeEventListener("interact", this.togglePlaying);
     if (this.hoverMenu) {
-      this.playPauseButton.object3D.removeEventListener("interact", this.togglePlaying);
       this.volumeUpButton.object3D.removeEventListener("interact", this.volumeUp);
       this.volumeDownButton.object3D.removeEventListener("interact", this.volumeDown);
       this.seekForwardButton.object3D.removeEventListener("interact", this.seekForward);
