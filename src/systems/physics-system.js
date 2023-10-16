@@ -3,7 +3,7 @@ import { AmmoDebugConstants, DefaultBufferSize } from "ammo-debug-drawer";
 import configs from "../utils/configs";
 import ammoWasmUrl from "ammo.js/builds/ammo.wasm.wasm";
 import { Rigidbody } from "../bit-components";
-import { updateRigiBodyParams } from "../inflators/rigid-body";
+import { updateBodyParams, updateRigidBodyParams } from "../inflators/rigid-body";
 
 const MESSAGE_TYPES = CONSTANTS.MESSAGE_TYPES,
   TYPE = CONSTANTS.TYPE,
@@ -231,6 +231,7 @@ export class PhysicsSystem {
     const bodyId = this.nextBodyUuid;
     this.nextBodyUuid += 1;
 
+    object3D.updateMatrices();
     this.workerHelpers.addBody(bodyId, object3D, options);
 
     this.bodyUuidToData.set(bodyId, {
@@ -250,7 +251,7 @@ export class PhysicsSystem {
 
   updateRigidBody(eid, options) {
     const bodyId = Rigidbody.bodyId[eid];
-    updateRigiBodyParams(eid, options);
+    updateBodyParams(eid, options);
     if (this.bodyUuidToData.has(bodyId)) {
       this.bodyUuidToData.get(bodyId).options = options;
       this.workerHelpers.updateBody(bodyId, options);
@@ -261,7 +262,7 @@ export class PhysicsSystem {
 
   updateRigidBodyOptions(eid, options) {
     const bodyId = Rigidbody.bodyId[eid];
-    updateRigiBodyParams(eid, options);
+    updateRigidBodyParams(eid, options);
     const bodyData = this.bodyUuidToData.get(bodyId);
     if (!bodyData) {
       // TODO: Fix me.
@@ -285,8 +286,9 @@ export class PhysicsSystem {
     if (bodyData.isInitialized) {
       delete this.indexToUuid[bodyData.index];
       bodyData.collisions.forEach(otherId => {
-        const otherData = this.bodyUuidToData.get(otherId).collisions;
-        otherData.splice(otherData.indexOf(uuid), 1);
+        const collisions = this.bodyUuidToData.get(otherId)?.collisions;
+        if (!collisions) return;
+        collisions.splice(collisions.indexOf(uuid), 1);
       });
       this.bodyUuids.splice(this.bodyUuids.indexOf(uuid), 1);
       this.bodyUuidToData.delete(uuid);

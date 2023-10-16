@@ -39,11 +39,12 @@ import {
   VideoTextureSource,
   Quack,
   Mirror,
-  MixerAnimatableInitialize
+  MixerAnimatableInitialize,
+  Inspectable
 } from "../bit-components";
 import { inflateMediaLoader } from "../inflators/media-loader";
 import { inflateMediaFrame } from "../inflators/media-frame";
-import { GrabbableParams, inflateGrabbable } from "../inflators/grabbable";
+import { GrabbableParams, inflateGLTFGrabbable, inflateGrabbable } from "../inflators/grabbable";
 import { inflateImage } from "../inflators/image";
 import { inflateVideo, VideoParams } from "../inflators/video";
 import { inflateModel, ModelParams } from "../inflators/model";
@@ -91,13 +92,20 @@ import { inflateAudioParams } from "../inflators/audio-params";
 import { AudioSourceParams, inflateAudioSource } from "../inflators/audio-source";
 import { AudioTargetParams, inflateAudioTarget } from "../inflators/audio-target";
 import { PhysicsShapeParams, inflatePhysicsShape } from "../inflators/physics-shape";
-import { inflateRigidBody, RigidBodyParams } from "../inflators/rigid-body";
+import { inflateGLTFRigidBody, inflateRigidBody, RigidBodyParams } from "../inflators/rigid-body";
 import { AmmoShapeParams, inflateAmmoShape } from "../inflators/ammo-shape";
 import { BoxColliderParams, inflateBoxCollider } from "../inflators/box-collider";
 import { inflateTrimesh } from "../inflators/trimesh";
 import { HeightFieldParams, inflateHeightField } from "../inflators/heightfield";
 import { inflateAudioSettings } from "../inflators/audio-settings";
 import { HubsVideoTexture } from "../textures/HubsVideoTexture";
+import { CustomTagParams, inflateCustomTags } from "../inflators/custom-tags";
+import { inflateNetworkedAnimation } from "../inflators/networked-animation";
+import { inflateNetworkedBehavior } from "../inflators/networked-behavior";
+import { inflateNetworkedTransform } from "../inflators/networked-transform";
+import { inflateMediaLink, MediaLinkParams } from "../inflators/media-link";
+import { inflateObjectMenuTarget, ObjectMenuTargetParams } from "../inflators/object-menu-target";
+import { inflateObjectMenuTransform, ObjectMenuTransformParams } from "../inflators/object-menu-transform";
 
 preload(
   new Promise(resolve => {
@@ -251,13 +259,11 @@ export interface ComponentData {
   hemisphereLight?: HemisphereLightParams;
   pointLight?: PointLightParams;
   spotLight?: SpotLightParams;
-  grabbable?: GrabbableParams;
   billboard?: { onlyY: boolean };
   mirror?: MirrorParams;
   audioZone?: AudioZoneParams;
   audioParams?: AudioSettings;
   mediaFrame?: any;
-  text?: TextParams;
 }
 
 type OptionalParams<T> = Partial<T> | true;
@@ -300,6 +306,7 @@ export interface JSXComponentData extends ComponentData {
   makeKinematicOnRelease?: true;
   destroyAtExtremeDistance?: true;
   quack?: true;
+  grabbable?: GrabbableParams;
 
   // @TODO Define all the anys
   networked?: any;
@@ -359,6 +366,10 @@ export interface JSXComponentData extends ComponentData {
   waypointPreview?: boolean;
   pdf?: PDFParams;
   loopAnimation?: LoopAnimationParams;
+  inspectable?: boolean;
+  objectMenuTransform?: OptionalParams<ObjectMenuTransformParams>;
+  objectMenuTarget?: OptionalParams<ObjectMenuTargetParams>;
+  text?: TextParams;
 }
 
 export interface GLTFComponentData extends ComponentData {
@@ -379,6 +390,15 @@ export interface GLTFComponentData extends ComponentData {
   zoneAudioSource: AudioSourceParams;
   audioTarget: AudioTargetParams;
   audioSettings: SceneAudioSettings;
+  interactable: true;
+  rigidbody?: OptionalParams<RigidBodyParams>;
+  physicsShape?: AmmoShapeParams;
+  customTags?: CustomTagParams;
+  networkedAnimation: true;
+  networkedBehavior: true;
+  networkedTransform: true;
+  text?: TextParams;
+  grabbable?: GrabbableParams;
 
   // deprecated
   spawnPoint?: true;
@@ -409,7 +429,6 @@ declare global {
 }
 
 export const commonInflators: Required<{ [K in keyof ComponentData]: InflatorFn }> = {
-  grabbable: inflateGrabbable,
   billboard: createDefaultInflator(Billboard),
 
   // inflators that create Object3Ds
@@ -421,8 +440,7 @@ export const commonInflators: Required<{ [K in keyof ComponentData]: InflatorFn 
   mirror: inflateMirror,
   audioZone: inflateAudioZone,
   audioParams: inflateAudioParams,
-  mediaFrame: inflateMediaFrame,
-  text: inflateText
+  mediaFrame: inflateMediaFrame
 };
 
 const jsxInflators: Required<{ [K in keyof JSXComponentData]: InflatorFn }> = {
@@ -464,6 +482,9 @@ const jsxInflators: Required<{ [K in keyof JSXComponentData]: InflatorFn }> = {
   quack: createDefaultInflator(Quack),
   mixerAnimatable: createDefaultInflator(MixerAnimatableInitialize),
   loopAnimation: inflateLoopAnimationInitialize,
+  inspectable: createDefaultInflator(Inspectable),
+  text: inflateText,
+  grabbable: inflateGrabbable,
   // inflators that create Object3Ds
   object3D: addObject3DComponent,
   slice9: inflateSlice9,
@@ -471,6 +492,8 @@ const jsxInflators: Required<{ [K in keyof JSXComponentData]: InflatorFn }> = {
   image: inflateImage,
   video: inflateVideo,
   link: inflateLink,
+  objectMenuTransform: inflateObjectMenuTransform,
+  objectMenuTarget: inflateObjectMenuTarget
 };
 
 export const gltfInflators: Required<{ [K in keyof GLTFComponentData]: InflatorFn }> = {
@@ -505,7 +528,16 @@ export const gltfInflators: Required<{ [K in keyof GLTFComponentData]: InflatorF
   boxCollider: inflateBoxCollider,
   trimesh: inflateTrimesh,
   heightfield: inflateHeightField,
-  audioSettings: inflateAudioSettings
+  audioSettings: inflateAudioSettings,
+  grabbable: inflateGLTFGrabbable,
+  interactable: createDefaultInflator(SingleActionButton),
+  rigidbody: inflateGLTFRigidBody,
+  physicsShape: inflateAmmoShape,
+  customTags: inflateCustomTags,
+  networkedAnimation: inflateNetworkedAnimation,
+  networkedBehavior: inflateNetworkedBehavior,
+  networkedTransform: inflateNetworkedTransform,
+  text: inflateText
 };
 
 function jsxInflatorExists(name: string): name is keyof JSXComponentData {
