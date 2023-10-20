@@ -399,7 +399,6 @@ export interface GLTFComponentData extends ComponentData {
   networkedTransform: true;
   text?: TextParams;
   grabbable?: GrabbableParams;
-  mediaLink: MediaLinkParams;
 
   // deprecated
   spawnPoint?: true;
