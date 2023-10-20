@@ -3,7 +3,6 @@ import { preloadFont } from "troika-three-text";
 import {
   $isStringType,
   CameraTool,
-  ObjectMenu,
   LinkHoverMenu,
   LinkHoverMenuItem,
   PDFMenu,
@@ -40,7 +39,8 @@ import {
   Quack,
   Mirror,
   MixerAnimatableInitialize,
-  Inspectable
+  Inspectable,
+  ObjectMenu
 } from "../bit-components";
 import { inflateMediaLoader } from "../inflators/media-loader";
 import { inflateMediaFrame } from "../inflators/media-frame";
@@ -399,6 +399,7 @@ export interface GLTFComponentData extends ComponentData {
   networkedTransform: true;
   text?: TextParams;
   grabbable?: GrabbableParams;
+  mediaLink: MediaLinkParams;
 
   // deprecated
   spawnPoint?: true;

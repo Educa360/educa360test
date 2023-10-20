@@ -321,7 +321,6 @@ export const PDFMenu = defineComponent({
   targetRef: Types.eid,
   clearTargetTimer: Types.f64
 });
-
 export const ObjectMenuTarget = defineComponent({
   flags: Types.ui8
 });
