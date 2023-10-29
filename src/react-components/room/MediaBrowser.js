@@ -23,7 +23,8 @@ const navTitleMessages = defineMessages({
   scenes: { id: "media-browser.nav_title.scenes", defaultMessage: "Scenes" },
   avatars: { id: "media-browser.nav_title.avatars", defaultMessage: "Avatars" },
   sketchfab: { id: "media-browser.nav_title.sketchfab", defaultMessage: "Sketchfab" },
-  twitch: { id: "media-browser.nav_title.twitch", defaultMessage: "Twitch" }
+  twitch: { id: "media-browser.nav_title.twitch", defaultMessage: "Twitch" },
+  educa360: { id: "media-browser.nav_title.educa360", defaultMessage: "Educa360" },
 });
 
 export function MediaBrowser({
@@ -52,7 +53,7 @@ export function MediaBrowser({
   children
 }) {
   const intl = useIntl();
-
+  
   return (
     <FullscreenLayout
       headerLeft={

@@ -400,10 +400,15 @@ AFRAME.registerComponent("media-loader", {
       // if the component creator didn't know the content type, we didn't get it from reticulum, and
       // we don't think we can infer it from the extension, we need to make a HEAD request to find it out
       contentType = contentType || guessContentType(canonicalUrl) || (await fetchContentType(accessibleUrl));
-
+      console.log(">>>>>>>>>>>>>>>", contentType)
       // TODO we should probably just never return "application/octet-stream" as expectedContentType, since its not really useful
       if (contentType === "application/octet-stream") {
         contentType = guessContentType(canonicalUrl) || contentType;
+      }
+
+      if (contentType === "binary/octet-stream") {
+        contentType = guessContentType(canonicalUrl) || contentType;
+        // contentType = "model/gltf+zip";
       }
 
       // Some servers treat m3u8 playlists as "audio/x-mpegurl", we always want to treat them as HLS videos

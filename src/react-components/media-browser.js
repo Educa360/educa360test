@@ -26,7 +26,8 @@ const PRIVACY_POLICY_LINKS = {
   gifs: "https://tenor.com/legal-privacy",
   sketchfab: "https://sketchfab.com/privacy",
   youtube: "https://policies.google.com/privacy",
-  twitch: "https://www.twitch.tv/p/legal/privacy-policy/"
+  twitch: "https://www.twitch.tv/p/legal/privacy-policy/",
+  educa360: "https://www.educa360.com/privacy"
 };
 
 const DEFAULT_FACETS = {
@@ -60,6 +61,16 @@ const DEFAULT_FACETS = {
   scenes: [
     { text: "Featured", params: { filter: "featured" } },
     { text: "My Scenes", params: { filter: "my-scenes" } }
+  ],
+  educa360: [
+    { text: "Art", params: { filter: "Arte"} },
+    { text: "Biology", params: { filter: "biologia"} },
+    { text: "Languages", params: { filter: "Idiomas"} },
+    { text: "Literature", params: { filter: "Literatura"} },
+    { text: "Physics", params: { filter: "fisica"} },
+    { text: "Geography", params: { filter: "geografia"} },
+    { text: "History", params: { filter: "historia"} },
+    { text: "Math", params: { filter: "matematicas"} },
   ]
 };
 
@@ -91,6 +102,10 @@ const poweredByMessages = defineMessages({
   scenes: {
     id: "media-browser.powered_by.scenes",
     defaultMessage: "Made with {editorName}"
+  },
+  educa360: {
+    id: "media-browser.powered_by.educa360",
+    defaultMessage: "Made with Educa360"
   }
 });
 
@@ -118,7 +133,8 @@ const searchPlaceholderMessages = defineMessages({
   gifs: { id: "media-browser.search-placeholder.gifs", defaultMessage: "Search for GIFs..." },
   twitch: { id: "media-browser.search-placeholder.twitch", defaultMessage: "Search for Twitch streams..." },
   sketchfab: { id: "media-browser.search-placeholder.sketchfab", defaultMessage: "Search Sketchfab Models..." },
-  default: { id: "media-browser.search-placeholder.default", defaultMessage: "Search..." }
+  default: { id: "media-browser.search-placeholder.default", defaultMessage: "Search..." },
+  educa360: { id: "media-browser.search-placeholder.educa360", defaultMessage: "Search for Educa360" },
 });
 
 const emptyMessages = defineMessages({
@@ -227,6 +243,7 @@ class MediaBrowserContainer extends Component {
   };
 
   handleEntryClicked = (evt, entry) => {
+    console.log("-------------------", evt, entry);
     evt.preventDefault();
 
     if (!entry.lucky_query) {

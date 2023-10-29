@@ -2,6 +2,20 @@ import { EventTarget } from "event-target-shim";
 import configs from "../utils/configs";
 import { getReticulumFetchUrl, fetchReticulumAuthenticated, hasReticulumServer } from "../utils/phoenix-utils";
 import { pushHistoryPath, sluglessPath, withSlug } from "../utils/history";
+import AWS from 'aws-sdk';
+
+AWS.config.update({
+  accessKeyId: process.env.ACCESS_KEY_ID,
+  secretAccessKey: process.env.SECRET_ACCESS_KEY,
+});
+
+const s3 = new AWS.S3();
+
+const params = {
+  Bucket: 'modeloseduca360',
+  Delimiter: '',
+  Prefix: '',
+};
 
 const EMPTY_RESULT = { entries: [], meta: {} };
 
@@ -13,10 +27,11 @@ const URL_SOURCE_TO_TO_API_SOURCE = {
   gifs: "tenor",
   sketchfab: "sketchfab",
   twitch: "twitch",
-  favorites: "favorites"
+  favorites: "favorites",
+  educa360: "educa360",
 };
 
-const desiredSources = ["sketchfab", "videos", "scenes", "avatars", "gifs", "images"];
+const desiredSources = ["sketchfab", "videos", "scenes", "avatars", "gifs", "images", "educa360"];
 const availableSources = desiredSources.filter(source => {
   const apiSource = URL_SOURCE_TO_TO_API_SOURCE[source];
   return configs.integration(apiSource);
@@ -27,7 +42,8 @@ export const MEDIA_SOURCE_DEFAULT_FILTERS = {
   gifs: "trending",
   sketchfab: "featured",
   scenes: "featured",
-  favorites: "my-favorites"
+  favorites: "my-favorites",
+  educa360: "Arte"
 };
 
 const SEARCH_CONTEXT_PARAMS = ["q", "filter", "cursor", "similar_to"];
@@ -90,31 +106,79 @@ export default class MediaSearchStore extends EventTarget {
 
     let fetch = true;
 
-    if (source === "avatars" || source === "scenes" || source === "favorites") {
-      if (isMy) {
-        if (window.APP.store.credentialsAccountId) {
-          searchParams.set("user", window.APP.store.credentialsAccountId);
+    if (source === "educa360") {
+      params.Prefix = "educa360model/" + searchParams.get("filter") + "/";
+      this.isFetching = true;
+      s3.listObjectsV2(params, (err, data) => {
+        if (err) {
+          console.log(err, err.stack);
+          this.isFetching = false;
+          this.dispatchEvent(new CustomEvent("statechanged"));
         } else {
-          fetch = false; // Don't fetch my-* if not signed in
+          const tempResult = {
+            entries: [],
+            meta: {
+              source: "educa360",
+              next_cursor: null
+            },
+            suggestions: null
+
+          };
+          data.Contents.filter(content => content.Key.includes("jpg"))
+          .map((contentItem) => {
+            const tempItem = {
+              attributions: {
+                creator: {
+                  name: "Educa360",
+                  url: "https://educa360.com/"
+                }
+              },
+              id: contentItem.ETag.replace(/\W/g, ''),
+              images: {
+                preview: {
+                  url: "https://modeloseduca360.s3.amazonaws.com/" + contentItem.Key
+                }
+              },
+              name: contentItem.Key.split('/')[2].split('.')[0],
+              type: "Educa360 Model",
+              url: "https://modeloseduca360.s3.amazonaws.com/" + contentItem.Key.replace(/\.jpg$/, '.glb')
+            }
+            tempResult.entries.push(tempItem)
+          })
+          this.result = tempResult;
+          this.isFetching = false;
+          this.dispatchEvent(new CustomEvent("statechanged"));
         }
-      }
+      });
     }
 
-    const path = `/api/v1/media/search?${searchParams.toString()}`;
-    const url = getReticulumFetchUrl(path);
-    if (this.lastSavedUrl === url) return;
+    else {
+      if (source === "avatars" || source === "scenes" || source === "favorites") {
+        if (isMy) {
+          if (window.APP.store.credentialsAccountId) {
+            searchParams.set("user", window.APP.store.credentialsAccountId);
+          } else {
+            fetch = false; // Don't fetch my-* if not signed in
+          }
+        }
+      }
 
-    this.isFetching = true;
-    this.dispatchEvent(new CustomEvent("statechanged"));
-    const result = fetch ? await fetchReticulumAuthenticated(path) : EMPTY_RESULT;
+      const path = `/api/v1/media/search?${searchParams.toString()}`;
+      const url = getReticulumFetchUrl(path);
+      if (this.lastSavedUrl === url) return;
 
-    if (this.requestIndex != currentRequestIndex) return;
+      this.isFetching = true;
+      this.dispatchEvent(new CustomEvent("statechanged"));
+      const result = fetch ? await fetchReticulumAuthenticated(path) : EMPTY_RESULT;
 
-    this.result = result;
-    this.nextCursor = this.result && this.result.meta && this.result.meta.next_cursor;
-    this.lastFetchedUrl = url;
-    this.isFetching = false;
-    this.dispatchEvent(new CustomEvent("statechanged"));
+      if (this.requestIndex != currentRequestIndex) return;
+
+      this.result = result;
+      this.nextCursor = this.result && this.result.meta && this.result.meta.next_cursor;
+      this.lastFetchedUrl = url;
+      this.isFetching = false;
+      this.dispatchEvent(new CustomEvent("statechanged"));
+    }
   };
 
   pageNavigate = delta => {
@@ -245,7 +309,7 @@ export default class MediaSearchStore extends EventTarget {
           searchParams.set("filter", hasAccountWithAvatars ? "my-avatars" : "featured");
         } else if (MEDIA_SOURCE_DEFAULT_FILTERS[source]) {
           searchParams.set("filter", MEDIA_SOURCE_DEFAULT_FILTERS[source]);
-        }
+        } 
       }
     }
 
