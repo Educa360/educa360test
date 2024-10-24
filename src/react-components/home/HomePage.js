@@ -33,6 +33,7 @@ export function HomePage() {
   const wrapInBold = chunk => <b>{chunk}</b>;
   useEffect(() => {
     const qs = new URLSearchParams(location.search);
+    console.log ("Test ok");
 
     // Support legacy sign in urls.
     if (qs.has("sign_in")) {
